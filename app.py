@@ -41,9 +41,14 @@ def draw_cards(query: str) -> str:
 
     result = f"✨ 为你抽了 {num} 张牌：\n\n"
     for card in drawn:
-        result += f"🃏 {card['name']}\n"
-        result += f"   正位：{card['meaning_positive']}\n"
-        result += f"   逆位：{card['meaning_negative']}\n\n"
+        # 随机决定正位或逆位（各50%概率）
+        is_upright = random.choice([True, False])
+        position = "正位" if is_upright else "逆位"
+        meaning = card['meaning_positive'] if is_upright else card['meaning_negative']
+
+        result += f"🃏 {card['name']}（{position}）\n"
+        result += f"   牌义：{meaning}\n\n"
+
     return result
 
 
