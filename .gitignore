@@ -7,3 +7,4 @@ __pycache__/
 script*.py
 6.py
 requirement.txt
+_last_drawn.json
