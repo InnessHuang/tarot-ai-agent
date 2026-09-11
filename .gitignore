@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+.idea/
+script*.py
+6.py
+requirement.txt
