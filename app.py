@@ -27,21 +27,43 @@ cards = load_cards()
 @tool
 def draw_cards(query: str) -> str:
     """抽取塔罗牌。用户说'抽牌'或'占卜'时调用。
-    参数 query 可以包含数量提示，如 '抽3张'、'抽五张'，默认抽1张。
+    参数 query 可以包含数量提示，如 '抽7张'、'抽十张'，默认抽1张。
+    如果用户没有指定数量，由 Agent 根据问题复杂程度决定抽几张：
+    - 简单问题（今日运势、单张指引）→ 抽1张
+    - 复杂问题（感情、事业、选择）→ 抽3张
     """
-    if "3" in query or "三" in query:
-        num = 3
-    elif "5" in query or "五" in query:
-        num = 5
-    else:
+    # 中文数字映射
+    cn_num = {
+        "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5,
+        "六": 6, "七": 7, "八": 8, "九": 9, "十": 10
+    }
+
+    num = None
+
+    # 先尝试从 query 里提取阿拉伯数字（如 "抽7张"）
+    import re
+    match = re.search(r'(\d+)', query)
+    if match:
+        num = int(match.group(1))
+
+    # 如果没有阿拉伯数字，尝试提取中文数字（如 "抽七张"）
+    if num is None:
+        for cn, val in cn_num.items():
+            if cn in query:
+                num = val
+                break
+
+    # 如果还是没指定，默认抽1张（Agent 会在 system_prompt 里被要求根据问题复杂度决定）
+    if num is None:
         num = 1
 
-    num = min(num, len(cards))
+    # 限制范围：最少1张，最多不超过牌库总数
+    num = max(1, min(num, len(cards)))
+
     drawn = random.sample(cards, num)
 
     result = f"✨ 为你抽了 {num} 张牌：\n\n"
     for card in drawn:
-        # 随机决定正位或逆位（各50%概率）
         is_upright = random.choice([True, False])
         position = "正位" if is_upright else "逆位"
         meaning = card['meaning_positive'] if is_upright else card['meaning_negative']
@@ -62,9 +84,18 @@ def build_agent():
     )
 
     system_prompt = (
-        "你是一位神秘的AI塔罗占卜师，拥有千年智慧。你的风格温柔、富有哲理，善于引导用户思考。\n"
-        "当用户想要占卜、抽牌、询问运势时，你必须调用 draw_cards 工具来抽牌，"
-        "然后结合抽到的牌义和用户的问题，给出温暖、有深度、有针对性的解读。\n"
+        "你是一位神秘的AI塔罗占卜师，拥有千年智慧。你的风格温柔、富有哲理，善于引导用户思考。\n\n"
+        "【抽牌规则】\n"
+        "当用户想要占卜、抽牌、询问运势时，你必须调用 draw_cards 工具来抽牌。\n"
+        "关于抽牌数量，按以下规则判断：\n"
+        "1. 如果用户明确说了数量（如'抽5张''抽七张'），就按用户说的数量调用工具。\n"
+        "2. 如果用户没有指定数量：\n"
+        "   - 简单问题（今日运势、单张指引、简单是非题）→ 抽1张\n"
+        "   - 复杂问题（感情关系、职业选择、人生方向、需要多角度分析）→ 抽3张\n"
+        "3. 调用工具时，在参数里明确写出数量，比如 '抽1张' 或 '抽3张'。\n\n"
+        "【解读规则】\n"
+        "抽到牌后，结合每张牌的牌义和位置（正位/逆位），给出温暖、有深度、有针对性的解读。\n"
+        "严格依据抽牌结果中的'正位'或'逆位'来解读，不要自行猜测或混淆。\n\n"
         "如果用户只是在打招呼或闲聊，就友好地回应，并引导用户提出想占卜的问题。"
     )
 
