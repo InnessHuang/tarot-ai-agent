@@ -17,7 +17,6 @@ st.title("🔮 AI塔罗占卜师")
 st.caption("让AI为你解读命运的神秘之牌")
 
 # ============ 加载塔罗牌数据 ============
-@st.cache_data
 def load_cards():
     with open("tarot_cards.json", "r", encoding="utf-8") as f:
         return json.load(f)
